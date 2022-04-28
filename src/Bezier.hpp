@@ -71,8 +71,7 @@ public:
     }
 };
 
-
-
+class Polynomial;
 class Bezier
 {
 public:
@@ -95,41 +94,8 @@ public:
     {
         ControlPoints.clear();
     }
-
-    Polynomial SwitchToPolynomial()
-    {
-        //store factorial from 0 to n
-        double factorial[n + 1];
-        factorial[0] = 1.0;
-        for(int i = 1; i <= n; i ++)
-        {
-            factorial[i] = factorial[i - 1] * double(i);
-        }
-
-        //calculate polynomial controlling points
-        vector<Point> polynomial_points;
-        polynomial_points.clear();
-        for(int j = 0; j <= n; j ++)
-        {
-            //calculate q_j
-            Point q_j;
-            for(int i = 0; i <= j; i ++)
-            {
-                //calculate q_ji
-                double parameter = 1.0;
-                parameter = parameter * factorial[n] / factorial[i] / factorial[n - j] / factorial[j - i];
-                if((j - i) % 2 != 0)
-                {
-                    parameter = parameter * -1;
-                }
-                Point q_ji = ControlPoints[i] * parameter;
-                q_j = q_j + q_ji;
-            }
-            polynomial_points.push_back(q_j);
-        }
-        Polynomial polynomial = Polynomial(polynomial_points);
-        return polynomial;
-    }
+    Polynomial SwitchToPolynomial();
+    
 };
 
 class Polynomial
@@ -154,30 +120,50 @@ public:
     {
         ControlPoints.clear();
     }
-
-    Bezier SwitchToBezier()
-    {
-        vector<Point> bezier_points;
-        bezier_points.clear();
-        for(int i = 0; i <= n; i ++)
-        {
-            double i_j = 1.0;
-            double n_j = 1.0;
-            Point p_i0 = ControlPoints[0] * i_j / n_j;
-            Point p_i = p_i0; 
-            for(int j = 1; j <= n; j ++)
-            {
-                i_j = i_j * double(i);
-                n_j = n_j * double(n);
-                Point p_ij = ControlPoints[j] * i_j / n_j;
-                p_i = p_i + p_ij; 
-            }
-            bezier_points.push_back(p_i);
-        }
-        Bezier bezier = Bezier(bezier_points);
-        return bezier;
-    }
+    Bezier SwitchToBezier();
 
 };
 
+Polynomial Bezier::SwitchToPolynomial()
+{
+    //store factorial from 0 to n
+    double factorial[n + 1];
+    factorial[0] = 1.0;
+    for(int i = 1; i <= n; i ++)
+    {
+        factorial[i] = factorial[i - 1] * double(i);
+    }
 
+    //calculate polynomial controlling points
+    vector<Point> polynomial_points;
+    polynomial_points.clear();
+    for(int j = 0; j <= n; j ++)
+    {
+            //calculate q_j
+        Point q_j;
+        for(int i = 0; i <= j; i ++)
+        {
+            //calculate q_ji
+            double parameter = 1.0;
+            parameter = parameter * factorial[n] / factorial[i] / factorial[n - j] / factorial[j - i];
+            if((j - i) % 2 != 0)
+            {
+                parameter = parameter * -1;
+            }
+            Point q_ji = ControlPoints[i] * parameter;
+            q_j = q_j + q_ji;
+        }
+        polynomial_points.push_back(q_j);
+    }
+    Polynomial polynomial = Polynomial(polynomial_points);
+    return polynomial;
+}
+
+Bezier Polynomial::SwitchToBezier()
+{
+    vector<Point> bezier_points;
+    bezier_points.clear();
+    //TODO
+    Bezier bezier = Bezier(bezier_points);
+    return bezier;
+}
