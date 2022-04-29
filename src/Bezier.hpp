@@ -124,6 +124,12 @@ public:
 
 };
 
+/*
+Switch a bezier curve to a polynomial curve
+
+Returns:
+    polynomial [Polynomial]: [the polynomial curve]
+*/
 Polynomial Bezier::SwitchToPolynomial()
 {
     //store factorial from 0 to n
@@ -159,11 +165,69 @@ Polynomial Bezier::SwitchToPolynomial()
     return polynomial;
 }
 
+/*
+Switch a polynomial curve to a bezier curve
+
+Returns:
+    bezier [Bezier]: [the bezier curve]
+*/
 Bezier Polynomial::SwitchToBezier()
 {
+    //store factorial from 0 to n
+    double factorial[n + 1];
+    factorial[0] = 1.0;
+    for(int i = 1; i <= n; i ++)
+    {
+        factorial[i] = factorial[i - 1] * double(i);
+    }
+
     vector<Point> bezier_points;
     bezier_points.clear();
-    //TODO
+    //initialize the matrix
+    double matrix[n + 1][n + 1];
+    for(int j = 0; j <= n; j ++)
+    {
+        for(int i = 0; i <= n; i ++)
+        {
+            if(i > j)
+            {
+                matrix[j][i] = 0;
+                continue;
+            }
+            double parameter = 1.0;
+            parameter = parameter * factorial[n] / factorial[i] / factorial[n - j] / factorial[j - i];
+            if((j - i) % 2 != 0)
+            {
+                parameter = parameter * -1;
+            }
+            matrix[j][i] = parameter;
+        }
+    }
+
+    //solve the linear equation
+    for(int i = 0; i <= n; i ++)
+    {
+        double left_x = 0.0;
+        double left_y = 0.0;
+        double right_x = ControlPoints[i].x; 
+        double right_y = ControlPoints[i].y;
+        double parameter = matrix[i][i];
+        for(int j = 0; j < i; j ++)
+        {
+            double new_left_x = matrix[i][j] * bezier_points[j].x;
+            double new_left_y = matrix[i][j] * bezier_points[j].y;
+            left_x = left_x + new_left_x; 
+            left_y = left_y + new_left_y;
+        }
+        double remain_x = right_x - left_x;
+        double remain_y = right_y - left_y;
+        double result_x = remain_x / parameter;
+        double result_y = remain_y / parameter;
+        Point new_point = Point(result_x, result_y);
+        bezier_points.push_back(new_point);
+    }
+
+
     Bezier bezier = Bezier(bezier_points);
     return bezier;
 }
