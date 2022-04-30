@@ -1,4 +1,5 @@
-#include<vector>
+#include <vector>
+#include <cmath>
 using namespace std;
 
 class Point
@@ -69,6 +70,11 @@ public:
         double result = x * b.y - y * b.x;
         return result;
     }
+    double dist(const Point& b) const 
+    {
+        double result = sqrt((x - b.x) * (x - b.x) + (y - b.y) * (y - b.y));
+        return result;
+    }
 };
 
 class Polynomial;
@@ -96,7 +102,8 @@ public:
     }
     Polynomial SwitchToPolynomial();
     Point GetPlace(double t);
-    
+    Point DeCasteljau(double t);
+
 };
 
 class Polynomial
@@ -254,4 +261,75 @@ Point Polynomial::GetPlace(double t)
         base = base * t;
     }
     return place;
+}
+
+/*
+Get the place of the point on the bezier curve given t
+
+Args:
+    t [double]: [the parameter t, which is in [0, 1]]
+
+Returns:
+    place [Point]: [the place of the result point on the curve given t]
+*/
+Point Bezier::GetPlace(double t)
+{
+    //store factorial from 0 to n
+    double factorial[n + 1];
+    factorial[0] = 1.0;
+    for(int i = 1; i <= n; i ++)
+    {
+        factorial[i] = factorial[i - 1] * double(i);
+    }
+
+    //store the t power from 0 to n
+    double t_power[n + 1];
+    t_power[0] = 1.0;
+    for(int i = 1; i <= n; i ++)
+    {
+        t_power[i] = t_power[i - 1] * t;
+    }
+
+    //store the (1 - t) power from 0 to n
+    double mt_power[n + 1];
+    mt_power[0] = 1.0;
+    for(int i = 1; i <= n; i ++)
+    {
+        mt_power[i] = mt_power[i - 1] * (1 - t);
+    }
+
+    Point place = Point();
+    for(int i = 0; i <= n; i ++)
+    {
+        double bin = factorial[n] / factorial[i] / factorial[n - i] * t_power[i] * mt_power[n - i];
+        Point new_place = ControlPoints[i] * bin;
+        place = place + new_place;
+    }
+    return place;
+}
+
+/*
+Get the place of the point on the bezier curve given t, using de Casteljau Algorithm
+
+Args:
+    t [double]: [the parameter t, which is in [0, 1]]
+
+Returns:
+    place [Point]: [the place of the result point on the curve given t]
+*/
+Point Bezier::DeCasteljau(double t)
+{
+    Point result_matrix[n + 1][n + 1];
+    for(int i = 0; i <= n; i ++)
+    {
+        result_matrix[0][i] = ControlPoints[i];
+    }
+    for(int i = 1; i <= n; i ++)
+    {
+        for(int j = 0; j <= n - i; j ++)
+        {
+            result_matrix[i][j] = result_matrix[i - 1][j] * (1 - t) + result_matrix[i - 1][j + 1] * t;
+        }
+    }
+    return result_matrix[n][0];
 }

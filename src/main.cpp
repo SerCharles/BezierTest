@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
+#include <ctime>
 #include "Bezier.hpp"
 using namespace std;
 
@@ -98,11 +99,8 @@ Returns:
 bool TestValue(Point& ground_truth, Point& my_result, double threshold)
 {
     bool result = 1;
-    if(abs(ground_truth.x - my_result.x) > threshold)
-    {
-        result = 0;
-    }
-    if(abs(ground_truth.y - my_result.y) > threshold)
+    double dist = ground_truth.dist(my_result);
+    if(dist > threshold)
     {
         result = 0;
     }
@@ -217,8 +215,8 @@ void TestRandomSwitch()
     int range = 1000;
     double threshold = 1e-5;
     cout << "Starting random test of curve switch" << endl;
-    cout << "There are ranks from 1 to 10, for each rank there are 10 examples, 100 examples in total" << endl;
-    for(int n = 1; n <= 10; n ++)
+    cout << "There are ranks from 1 to 20, for each rank there are 10 examples, 200 examples in total" << endl;
+    for(int n = 1; n <= 20; n ++)
     {
         for(int i = 1; i <= 10; i ++)
         {
@@ -251,8 +249,207 @@ void TestRandomSwitch()
     cout << "Random test of curve switch has ended."<< endl;
 }
 
+/*
+Randomly test the value calculation of Bezier
+*/
+void TestRandomValueBezier()
+{
+    bool result = 1;
+    int range = 1000;
+    double threshold = 1e-5;
+    cout << "Starting random test of bezier curve value" << endl;
+    cout << "There are ranks from 1 to 20, for each rank there are 100 examples, 2000 examples in total" << endl;
+    for(int n = 1; n <= 20; n ++)
+    {
+        vector<Bezier> bezier_list;
+        vector<Point> result_list_brute_force;
+        vector<Point> result_list_de_casteljau;
+        vector<Point> result_list_polynomial;
+        vector<double> t_list;
+        bezier_list.clear();
+        result_list_brute_force.clear();
+        result_list_de_casteljau.clear();
+        result_list_polynomial.clear();
+        t_list.clear(); 
+        for(int i = 1; i <= 100; i ++)
+        {
+            Bezier bezier = GenerateRandomBezier(n, range);
+            bezier_list.push_back(bezier);
+            double t = GenerateRandomParameter();
+            t_list.push_back(t);
+        }
+
+        //get results and times
+        clock_t start_brute_force = clock();
+        for(int i = 0; i < 100; i ++)
+        {
+            Bezier bezier = bezier_list[i];
+            double t = t_list[i];
+            Point result = bezier.GetPlace(t);
+            result_list_brute_force.push_back(result);
+        }
+        clock_t end_brute_force = clock();
+        double time_brute_force = (double)(end_brute_force - start_brute_force) / CLOCKS_PER_SEC * 1000;
+
+        clock_t start_de_casteljau = clock();
+        for(int i = 0; i < 100; i ++)
+        {
+            Bezier bezier = bezier_list[i];
+            double t = t_list[i];
+            Point result = bezier.DeCasteljau(t);
+            result_list_de_casteljau.push_back(result);
+        }
+        clock_t end_de_casteljau = clock();
+        double time_de_casteljau = (double)(end_de_casteljau - start_de_casteljau) / CLOCKS_PER_SEC * 1000;
+
+        clock_t start_polynomial = clock();
+        for(int i = 0; i < 100; i ++)
+        {
+            Bezier bezier = bezier_list[i];
+            double t = t_list[i];
+            Polynomial polynomial = bezier.SwitchToPolynomial();
+            Point result = polynomial.GetPlace(t);
+            result_list_polynomial.push_back(result);
+        }
+        clock_t end_polynomial = clock();
+        double time_polynomial = (double)(end_polynomial - start_polynomial) / CLOCKS_PER_SEC * 1000;
+
+        //test whether right and error
+        double dist_de_casteljau = 0.0;
+        double max_de_casteljau = 0.0;
+        double dist_polynomial = 0.0;
+        double max_polynomial = 0.0;
+        for(int i = 0; i < 100; i ++)
+        {
+            Point result_brute_force = result_list_brute_force[i];
+            Point result_de_casteljau = result_list_de_casteljau[i];
+            Point result_polynomial = result_list_polynomial[i];
+            double dist1 = result_brute_force.dist(result_de_casteljau);
+            dist_de_casteljau += dist1;
+            max_de_casteljau = max(max_de_casteljau, dist1);
+            double dist2 = result_brute_force.dist(result_polynomial);
+            dist_polynomial += dist2;
+            max_polynomial = max(max_polynomial, dist2);
+        }
+        dist_de_casteljau = dist_de_casteljau / 100;
+        dist_polynomial = dist_polynomial / 100;
+
+        //show results
+        cout << "Current rank: " << n << endl;
+        cout << "The average dist of de castelijau: " << dist_de_casteljau << endl;
+        cout << "The average dist of polynomial: " << dist_polynomial << endl;
+        cout << "The max dist of de castelijau: " << max_de_casteljau << endl;
+        cout << "The max dist of polynomial: " << max_polynomial << endl;   
+        cout << "The average time of brute force: " << time_brute_force << " ms" << endl;
+        cout << "The average time of de castelijau: " << time_de_casteljau << " ms" << endl;
+        cout << "The average time of polynomial: " << time_polynomial << " ms" << endl;
+        cout << "------------------------------------------------------------------------" << endl;
+    }
+}
+
+/*
+Randomly test the value calculation of Polynomial
+*/
+void TestRandomValuePolynomial()
+{
+    bool result = 1;
+    int range = 1000;
+    double threshold = 1e-5;
+    cout << "Starting random test of polynomial curve value" << endl;
+    cout << "There are ranks from 1 to 20, for each rank there are 100 examples, 2000 examples in total" << endl;
+    for(int n = 1; n <= 20; n ++)
+    {
+        vector<Polynomial> polynomial_list;
+        vector<Point> result_list_brute_force;
+        vector<Point> result_list_de_casteljau;
+        vector<Point> result_list_bezier;
+        vector<double> t_list;
+        polynomial_list.clear();
+        result_list_brute_force.clear();
+        result_list_de_casteljau.clear();
+        result_list_bezier.clear();
+        t_list.clear(); 
+        for(int i = 1; i <= 100; i ++)
+        {
+            Polynomial polynomial = GenerateRandomPolynomial(n, range);
+            polynomial_list.push_back(polynomial);
+            double t = GenerateRandomParameter();
+            t_list.push_back(t);
+        }
+
+        //get results and times
+        clock_t start_brute_force = clock();
+        for(int i = 0; i < 100; i ++)
+        {
+            Polynomial polynomial = polynomial_list[i];
+            double t = t_list[i];
+            Point result = polynomial.GetPlace(t);
+            result_list_brute_force.push_back(result);
+        }
+        clock_t end_brute_force = clock();
+        double time_brute_force = (double)(end_brute_force - start_brute_force) / CLOCKS_PER_SEC * 1000;
+
+        clock_t start_de_casteljau = clock();
+        for(int i = 0; i < 100; i ++)
+        {
+            Polynomial polynomial = polynomial_list[i];
+            double t = t_list[i];
+            Bezier bezier = polynomial.SwitchToBezier();
+            Point result = bezier.DeCasteljau(t);
+            result_list_de_casteljau.push_back(result);
+        }
+        clock_t end_de_casteljau = clock();
+        double time_de_casteljau = (double)(end_de_casteljau - start_de_casteljau) / CLOCKS_PER_SEC * 1000;
+
+        clock_t start_bezier = clock();
+        for(int i = 0; i < 100; i ++)
+        {
+            Polynomial polynomial = polynomial_list[i];
+            double t = t_list[i];
+            Bezier bezier = polynomial.SwitchToBezier();
+            Point result = bezier.GetPlace(t);
+            result_list_bezier.push_back(result);
+        }
+        clock_t end_bezier = clock();
+        double time_bezier = (double)(end_bezier - start_bezier) / CLOCKS_PER_SEC * 1000;
+
+        //test whether right and error
+        double dist_de_casteljau = 0.0;
+        double max_de_casteljau = 0.0;
+        double dist_bezier = 0.0;
+        double max_bezier = 0.0;
+        for(int i = 0; i < 100; i ++)
+        {
+            Point result_brute_force = result_list_brute_force[i];
+            Point result_de_casteljau = result_list_de_casteljau[i];
+            Point result_bezier = result_list_bezier[i];
+            double dist1 = result_brute_force.dist(result_de_casteljau);
+            dist_de_casteljau += dist1;
+            max_de_casteljau = max(max_de_casteljau, dist_de_casteljau);
+            double dist2 = result_brute_force.dist(result_bezier);
+            dist_bezier += dist2;
+            max_bezier = max(max_bezier, dist_bezier);
+        }
+        dist_de_casteljau = dist_de_casteljau / 100;
+        dist_bezier = dist_bezier / 100;
+
+        //show results
+        cout << "Current rank: " << n << endl;
+        cout << "The average dist of de castelijau: " << dist_de_casteljau << endl;
+        cout << "The average dist of bezier: " << dist_bezier << endl;
+        cout << "The max dist of de castelijau: " << max_de_casteljau << endl;
+        cout << "The max dist of bezier: " << max_bezier << endl;
+        cout << "The average time of brute force: " << time_brute_force << " ms" << endl;
+        cout << "The average time of de castelijau: " << time_de_casteljau << " ms" << endl;
+        cout << "The average time of bezier: " << time_bezier << " ms" << endl;
+        cout << "------------------------------------------------------------------------" << endl;
+    }
+}
+
 int main()
 {
     TestExamples();
     TestRandomSwitch();
+    TestRandomValueBezier();
+    TestRandomValuePolynomial();
 }
