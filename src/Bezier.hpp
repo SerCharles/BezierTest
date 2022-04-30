@@ -95,6 +95,7 @@ public:
         ControlPoints.clear();
     }
     Polynomial SwitchToPolynomial();
+    Point GetPlace(double t);
     
 };
 
@@ -121,7 +122,7 @@ public:
         ControlPoints.clear();
     }
     Bezier SwitchToBezier();
-
+    Point GetPlace(double t);
 };
 
 /*
@@ -230,4 +231,27 @@ Bezier Polynomial::SwitchToBezier()
 
     Bezier bezier = Bezier(bezier_points);
     return bezier;
+}
+
+
+/*
+Get the place of the point on the polynomial curve given t
+
+Args:
+    t [double]: [the parameter t, which is in [0, 1]]
+
+Returns:
+    place [Point]: [the place of the result point on the curve given t]
+*/
+Point Polynomial::GetPlace(double t)
+{
+    double base = 1.0;
+    Point place = Point();
+    for(int i = 0; i <= n; i ++)
+    {
+        Point new_place = ControlPoints[i] * base;
+        place = place + new_place;
+        base = base * t;
+    }
+    return place;
 }
