@@ -25,15 +25,21 @@ double GenerateRandomPlace(int range)
 }
 
 /*
-Generate a random t between [0, 1]
+Generate a random t between [minumum, maximum]
+Args:
+    minimum [double]: [the minimum of t, between 0 and 1]
+    maximum [double]: [the maximum of t, between 0 and 1]
+
 Returns:
     t [double]: [a random number between 0 and 1]
 */
-double GenerateRandomParameter()
+double GenerateRandomParameter(double minimum, double maximum)
 {
     int raw_place = rand();
     raw_place = raw_place % 1001;
     double t = raw_place / 1000.0;
+    double d = maximum - minimum;
+    t = t * d + minimum;
     return t;
 }
 
@@ -55,7 +61,7 @@ Polynomial GenerateRandomPolynomial(int n, int range)
     {
         double x = GenerateRandomPlace(range);
         double y = GenerateRandomPlace(range);
-        Point new_point = Point(x, y);\
+        Point new_point = Point(x, y);
         points.push_back(new_point);
     }
     Polynomial curve = Polynomial(points);
@@ -80,7 +86,7 @@ Bezier GenerateRandomBezier(int n, int range)
     {
         double x = GenerateRandomPlace(range);
         double y = GenerateRandomPlace(range);
-        Point new_point = Point(x, y);\
+        Point new_point = Point(x, y);
         points.push_back(new_point);
     }
     Bezier curve = Bezier(points);
@@ -212,7 +218,7 @@ Randomly test the switch between Bezier and Polynomial
 void TestRandomSwitch()
 {
     bool result = 1;
-    int range = 1000;
+    int range = 1000000;
     double threshold = 1e-5;
     cout << "Starting random test of curve switch" << endl;
     cout << "There are ranks from 1 to 20, for each rank there are 10 examples, 200 examples in total" << endl;
@@ -251,12 +257,16 @@ void TestRandomSwitch()
 
 /*
 Randomly test the value calculation of Bezier
+Args:
+    range [int]: [the range of the point coordinates, [-range, range]]
+    min_t [double]: [the minimum of t]
+    max_t [double]: [the maximum of t]
 */
-void TestRandomValueBezier()
+void TestRandomValueBezier(int range, double min_t, double max_t)
 {
-    bool result = 1;
-    int range = 1000;
-    double threshold = 1e-5;
+    ofstream outfile;
+	outfile.open("bezier.txt", ios::out);
+    int repeat_times = 1000;
     cout << "Starting random test of bezier curve value" << endl;
     cout << "There are ranks from 1 to 20, for each rank there are 100 examples, 2000 examples in total" << endl;
     for(int n = 1; n <= 20; n ++)
@@ -271,17 +281,17 @@ void TestRandomValueBezier()
         result_list_de_casteljau.clear();
         result_list_polynomial.clear();
         t_list.clear(); 
-        for(int i = 1; i <= 100; i ++)
+        for(int i = 0; i < repeat_times; i ++)
         {
             Bezier bezier = GenerateRandomBezier(n, range);
             bezier_list.push_back(bezier);
-            double t = GenerateRandomParameter();
+            double t = GenerateRandomParameter(min_t, max_t);
             t_list.push_back(t);
         }
 
         //get results and times
         clock_t start_brute_force = clock();
-        for(int i = 0; i < 100; i ++)
+        for(int i = 0; i < repeat_times; i ++)
         {
             Bezier bezier = bezier_list[i];
             double t = t_list[i];
@@ -292,7 +302,7 @@ void TestRandomValueBezier()
         double time_brute_force = (double)(end_brute_force - start_brute_force) / CLOCKS_PER_SEC * 1000;
 
         clock_t start_de_casteljau = clock();
-        for(int i = 0; i < 100; i ++)
+        for(int i = 0; i < repeat_times; i ++)
         {
             Bezier bezier = bezier_list[i];
             double t = t_list[i];
@@ -303,7 +313,7 @@ void TestRandomValueBezier()
         double time_de_casteljau = (double)(end_de_casteljau - start_de_casteljau) / CLOCKS_PER_SEC * 1000;
 
         clock_t start_polynomial = clock();
-        for(int i = 0; i < 100; i ++)
+        for(int i = 0; i < repeat_times; i ++)
         {
             Bezier bezier = bezier_list[i];
             double t = t_list[i];
@@ -319,7 +329,7 @@ void TestRandomValueBezier()
         double max_de_casteljau = 0.0;
         double dist_polynomial = 0.0;
         double max_polynomial = 0.0;
-        for(int i = 0; i < 100; i ++)
+        for(int i = 0; i < repeat_times; i ++)
         {
             Point result_brute_force = result_list_brute_force[i];
             Point result_de_casteljau = result_list_de_casteljau[i];
@@ -331,8 +341,8 @@ void TestRandomValueBezier()
             dist_polynomial += dist2;
             max_polynomial = max(max_polynomial, dist2);
         }
-        dist_de_casteljau = dist_de_casteljau / 100;
-        dist_polynomial = dist_polynomial / 100;
+        dist_de_casteljau = dist_de_casteljau / repeat_times;
+        dist_polynomial = dist_polynomial / repeat_times;
 
         //show results
         cout << "Current rank: " << n << endl;
@@ -344,19 +354,26 @@ void TestRandomValueBezier()
         cout << "The average time of de castelijau: " << time_de_casteljau << " ms" << endl;
         cout << "The average time of polynomial: " << time_polynomial << " ms" << endl;
         cout << "------------------------------------------------------------------------" << endl;
+        outfile << n << ' ' << dist_de_casteljau << ' ' << dist_polynomial << ' ' << max_de_casteljau << ' ' << max_polynomial << ' ' << time_brute_force << ' ' << time_de_casteljau << ' ' << time_polynomial << endl;
     }
+    outfile.close();
 }
 
 /*
 Randomly test the value calculation of Polynomial
+Args:
+    range [int]: [the range of the point coordinates, [-range, range]]
+    min_t [double]: [the minimum of t]
+    max_t [double]: [the maximum of t]
 */
-void TestRandomValuePolynomial()
+void TestRandomValuePolynomial(int range, double min_t, double max_t)
 {
-    bool result = 1;
-    int range = 1000;
-    double threshold = 1e-5;
+    ofstream outfile;
+	outfile.open("polynomial.txt", ios::out);
+    int repeat_times = 1000;
     cout << "Starting random test of polynomial curve value" << endl;
     cout << "There are ranks from 1 to 20, for each rank there are 100 examples, 2000 examples in total" << endl;
+    
     for(int n = 1; n <= 20; n ++)
     {
         vector<Polynomial> polynomial_list;
@@ -369,17 +386,17 @@ void TestRandomValuePolynomial()
         result_list_de_casteljau.clear();
         result_list_bezier.clear();
         t_list.clear(); 
-        for(int i = 1; i <= 100; i ++)
+        for(int i = 0; i < repeat_times; i ++)
         {
             Polynomial polynomial = GenerateRandomPolynomial(n, range);
             polynomial_list.push_back(polynomial);
-            double t = GenerateRandomParameter();
+            double t = GenerateRandomParameter(min_t, max_t);
             t_list.push_back(t);
         }
 
         //get results and times
         clock_t start_brute_force = clock();
-        for(int i = 0; i < 100; i ++)
+        for(int i = 0; i < repeat_times; i ++)
         {
             Polynomial polynomial = polynomial_list[i];
             double t = t_list[i];
@@ -390,7 +407,7 @@ void TestRandomValuePolynomial()
         double time_brute_force = (double)(end_brute_force - start_brute_force) / CLOCKS_PER_SEC * 1000;
 
         clock_t start_de_casteljau = clock();
-        for(int i = 0; i < 100; i ++)
+        for(int i = 0; i < repeat_times; i ++)
         {
             Polynomial polynomial = polynomial_list[i];
             double t = t_list[i];
@@ -402,7 +419,7 @@ void TestRandomValuePolynomial()
         double time_de_casteljau = (double)(end_de_casteljau - start_de_casteljau) / CLOCKS_PER_SEC * 1000;
 
         clock_t start_bezier = clock();
-        for(int i = 0; i < 100; i ++)
+        for(int i = 0; i < repeat_times; i ++)
         {
             Polynomial polynomial = polynomial_list[i];
             double t = t_list[i];
@@ -418,7 +435,7 @@ void TestRandomValuePolynomial()
         double max_de_casteljau = 0.0;
         double dist_bezier = 0.0;
         double max_bezier = 0.0;
-        for(int i = 0; i < 100; i ++)
+        for(int i = 0; i < repeat_times; i ++)
         {
             Point result_brute_force = result_list_brute_force[i];
             Point result_de_casteljau = result_list_de_casteljau[i];
@@ -430,8 +447,8 @@ void TestRandomValuePolynomial()
             dist_bezier += dist2;
             max_bezier = max(max_bezier, dist_bezier);
         }
-        dist_de_casteljau = dist_de_casteljau / 100;
-        dist_bezier = dist_bezier / 100;
+        dist_de_casteljau = dist_de_casteljau / repeat_times;
+        dist_bezier = dist_bezier / repeat_times;
 
         //show results
         cout << "Current rank: " << n << endl;
@@ -443,13 +460,15 @@ void TestRandomValuePolynomial()
         cout << "The average time of de castelijau: " << time_de_casteljau << " ms" << endl;
         cout << "The average time of bezier: " << time_bezier << " ms" << endl;
         cout << "------------------------------------------------------------------------" << endl;
+        outfile << n << ' ' << dist_de_casteljau << ' ' << dist_bezier << ' ' << max_de_casteljau << ' ' << max_bezier << ' ' << time_brute_force << ' ' << time_de_casteljau << ' ' << time_bezier << endl;
     }
+    outfile.close();
 }
 
 int main()
 {
     TestExamples();
     TestRandomSwitch();
-    TestRandomValueBezier();
-    TestRandomValuePolynomial();
+    TestRandomValueBezier(1000000, 0, 1);    
+    TestRandomValuePolynomial(1000000, 0, 1);
 }
