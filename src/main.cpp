@@ -536,6 +536,6 @@ int main()
 {
     TestExamples();
     TestRandomSwitch();
-    TestRandomValueBezier(1e-6, 0, 1);    
-    TestRandomValuePolynomial(1e-6, 0, 1);
+    TestRandomValueBezier(1e6, 0, 1);    
+    TestRandomValuePolynomial(1e6, 0, 1);
 }
