@@ -217,7 +217,7 @@ Randomly test the switch between Bezier and Polynomial
 */
 void TestRandomSwitch()
 {
-    bool result = 1;
+    int right = 0;
     int range = 1000000;
     double threshold = 1e-5;
     cout << "Starting random test of curve switch" << endl;
@@ -233,10 +233,10 @@ void TestRandomSwitch()
             bool the_result = 1;
             the_result = the_result & TestCurve(polynomial_gt, polynomial_mine, threshold);
             the_result = the_result & TestCurve(bezier_gt, bezier_mine, threshold);
-            result = result & the_result;
             if(the_result)
             {
                 cout << "Example " << i << " with rank " << n << " is right." << endl;
+                right += 1;
             }
             else 
             {
@@ -244,14 +244,8 @@ void TestRandomSwitch()
             }
         } 
     }
-    if(result)
-    {
-        cout << "All the examples are right" << endl;
-    }
-    else 
-    {
-        cout << "Not all the examples are right" << endl;
-    }
+    cout << right << "/200 of the examples are right" << endl;
+    
     cout << "Random test of curve switch has ended."<< endl;
 }
 
@@ -486,7 +480,6 @@ void TestRandomValuePolynomial(double range, double min_t, double max_t)
                 max_de_casteljau = dist1;
                 max_de_casteljau_i = i;
             }
-            max_de_casteljau = max(max_de_casteljau, dist_de_casteljau);
             double dist2 = result_brute_force.dist(result_bezier);
             dist_bezier += dist2;
             if(dist2 > max_bezier)
@@ -536,6 +529,6 @@ int main()
 {
     TestExamples();
     TestRandomSwitch();
-    TestRandomValueBezier(1e6, 0, 1);    
-    TestRandomValuePolynomial(1e6, 0, 1);
+    TestRandomValueBezier(1e3, 0, 1);    
+    TestRandomValuePolynomial(1e3, 0, 1);
 }
