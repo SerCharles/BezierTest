@@ -11,7 +11,7 @@
 *.gch
 *.pch
 .vscode
-*.txt
+
 # Compiled Dynamic libraries
 *.so
 *.dylib
